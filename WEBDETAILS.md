@@ -1,14 +1,23 @@
-Rekayasa Perangkat Lunak
+#Rekayasa Perangkat Lunak
 Nama Website: Pintika
 
 TUJUAN WEBSITE: Sebagai alat pencatatan dan mengelola izin untuk peminjaman barang organisasi HIMTIKA
 
 TECH STACK
 1. Frontend: React.js
-2. Styling: Tailwind CSS
-3. Backend: Node.js
+2. Styling: CSS 
+3. Backend: Next.js
 4. Database: MySQL
 5. ORM: Prisma
+
+-----------------------------------------------------------------------------------------------------------------------------|
+CODE RULES:
+* Do not add comments unless truly necessary.
+* Use PascalCase for all classes, types, interfaces, enums, React components, database models, API DTOs, and JSON property names.
+* Local variables may use camelCase.
+* Keep code lines below 150 characters where practical.
+* Use a clean and simple folder structure.
+* Do not add authentication in this first version. Assume one lecturer uses the application.
 
 -----------------------------------------------------------------------------------------------------------------------------|
 RANCANGAN DATABASE WEBSITE PINTIKA (3NF)
@@ -53,6 +62,15 @@ RANCANGAN DATABASE WEBSITE PINTIKA (3NF)
 - catatan_kondisi_kembali
 
 -----------------------------------------------------------------------------------------------------------------------------|
+DATABASE RULES:
+* A Commit must be unique by `RepositoryId` and `Sha`.
+* Never delete existing commit data during synchronization.
+* Never replace existing commit records.
+* When data is fetched again, save only commits that do not already exist in the database.
+* Update `LastSyncedAt` after a successful synchronization.
+* Use Prisma migrations and seed one example course, three students, and public GitHub repositories.
+
+-----------------------------------------------------------------------------------------------------------------------------|
 FUNGSI CRUD DAN PEMETAAN FITUR WEBSITE PINTIKA
 
 1. ENTITAS: Users (Fitur Manajemen Akun & Autentikasi)
@@ -78,3 +96,6 @@ FUNGSI CRUD DAN PEMETAAN FITUR WEBSITE PINTIKA
 - Read: Menampilkan riwayat peminjaman Anggota dan daftar antrean persetujuan pada Dashboard Admin.
 - Update: Admin mengubah status pengajuan (Approve/Reject) serta mengonfirmasi pengembalian barang.
 - Delete: Anggota membatalkan pengajuan peminjaman yang masih berstatus pending.
+
+-----------------------------------------------------------------------------------------------------------------------------|
+
