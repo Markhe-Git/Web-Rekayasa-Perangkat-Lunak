@@ -4,9 +4,11 @@ Nama Website: Pintika
 TUJUAN WEBSITE: Sebagai alat pencatatan dan mengelola izin untuk peminjaman barang organisasi HIMTIKA
 
 TECH STACK:
+
 Frontend:
 1. Structure: React.js
 2. Styling: CSS 
+
 Backend:
 1. Runtime Enviroment: Node.js
 2. Framework: Next.js
