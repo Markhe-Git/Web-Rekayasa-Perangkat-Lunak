@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  IdUser          Int           @id @default(autoincrement()) @map("id_user")
+  Nim             String        @unique @map("nim") @db.VarChar(50)
+  Nama            String        @map("nama") @db.VarChar(100)
+  Email           String        @unique @map("email") @db.VarChar(100)
+  Password        String        @map("password") @db.VarChar(255)
+  Role            Role          @default(Anggota) @map("role")
+  CreatedAt       DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+
+  Peminjaman        Peminjaman[]  @relation("PeminjamanUser")
+  PeminjamanAdmin   Peminjaman[]  @relation("PeminjamanAdmin")
+
+  @@map("users")
+}
+
+model KategoriBarang {
+  IdKategori    Int      @id @default(autoincrement()) @map("id_kategori")
+  NamaKategori  String   @map("nama_kategori") @db.VarChar(100)
+
+  Barang        Barang[]
+
+  @@map("kategori_barang")
+}
+
+model Barang {
+  IdBarang        Int             @id @default(autoincrement()) @map("id_barang")
+  IdKategori      Int             @map("id_kategori")
+  KodeInventaris  String          @unique @map("kode_inventaris") @db.VarChar(50)
+  NamaBarang      String          @map("nama_barang") @db.VarChar(100)
+  Kondisi         KondisiBarang   @default(Baik) @map("kondisi")
+  Status          StatusBarang    @default(Tersedia) @map("status")
+
+  Kategori        KategoriBarang  @relation(fields: [IdKategori], references: [IdKategori])
+  DetailPeminjaman DetailPeminjaman[]
+
+  @@map("barang")
+}
+
+model Peminjaman {
+  IdPeminjaman        Int                   @id @default(autoincrement()) @map("id_peminjaman")
+  IdUser              Int                   @map("id_user")
+  IdAdminApproval     Int?                  @map("id_admin_approval")
+  TglPengajuan        DateTime              @default(now()) @map("tgl_pengajuan") @db.DateTime(3)
+  TglPinjam           DateTime              @map("tgl_pinjam") @db.DateTime(3)
+  TglRencanaKembali   DateTime              @map("tgl_rencana_kembali") @db.DateTime(3)
+  TglRealisasiKembali DateTime?             @map("tgl_realisasi_kembali") @db.DateTime(3)
+  TujuanPinjam        String                @map("tujuan_pinjam") @db.Text
+  StatusPeminjaman    StatusPeminjaman      @default(Pending) @map("status_peminjaman")
+  CatatanAdmin        String?               @map("catatan_admin") @db.Text
+
+  User                Users                 @relation("PeminjamanUser", fields: [IdUser], references: [IdUser])
+  Admin               Users?                @relation("PeminjamanAdmin", fields: [IdAdminApproval], references: [IdUser])
+  DetailPeminjaman    DetailPeminjaman[]
+
+  @@map("peminjaman")
+}
+
+model DetailPeminjaman {
+  IdDetail              Int       @id @default(autoincrement()) @map("id_detail")
+  IdPeminjaman          Int       @map("id_peminjaman")
+  IdBarang              Int       @map("id_barang")
+  CatatanKondisiKembali String?   @map("catatan_kondisi_kembali") @db.Text
+
+  Peminjaman            Peminjaman @relation(fields: [IdPeminjaman], references: [IdPeminjaman], onDelete: Cascade)
+  Barang                Barang     @relation(fields: [IdBarang], references: [IdBarang])
+
+  @@map("detail_peminjaman")
+}
+
+model Repositories {
+  RepositoryId  Int       @id @map("repository_id")
+  Name          String    @map("name") @db.VarChar(100)
+  Url           String    @map("url") @db.VarChar(255)
+  LastSyncedAt  DateTime  @map("last_synced_at") @db.DateTime(3)
+
+  Commits       Commits[]
+
+  @@map("repositories")
+}
+
+model Commits {
+  RepositoryId  Int           @map("repository_id")
+  Sha           String        @map("sha") @db.VarChar(40)
+  Message       String        @map("message") @db.Text
+  Author        String        @map("author") @db.VarChar(100)
+  CommittedAt   DateTime      @map("committed_at") @db.DateTime(3)
+
+  Repository    Repositories  @relation(fields: [RepositoryId], references: [RepositoryId], onDelete: Cascade)
+
+  @@id([RepositoryId, Sha])
+  @@map("commits")
+}
+
+enum Role {
+  Admin
+  Anggota
+}
+
+enum KondisiBarang {
+  Baik
+  RusakRingan
+  RusakBerat
+}
+
+enum StatusBarang {
+  Tersedia
+  Dipinjam
+  Maintenance
+}
+
+enum StatusPeminjaman {
+  Pending
+  Approved
+  Rejected
+  Completed
+  Cancelled
+}
