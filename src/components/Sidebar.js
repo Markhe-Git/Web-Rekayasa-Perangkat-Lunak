@@ -16,8 +16,8 @@ export default function Sidebar({ activePage, onNavigate }) {
       <div className="sidebar-logo">
         <div className="sidebar-logo-icon">📌</div>
         <div className="sidebar-logo-text">
-          <h1>Pintika</h1>
-          <p>HIMTIKA</p>
+          <h1 className="sidebar-logo-title">Pintika</h1>
+          <p className="sidebar-logo-subtitle">HIMTIKA</p>
         </div>
       </div>
 
