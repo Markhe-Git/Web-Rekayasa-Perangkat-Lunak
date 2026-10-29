@@ -9,14 +9,34 @@ DELETE FROM `barang`;
 DELETE FROM `kategori_barang`;
 DELETE FROM `users`;
 
--- 1. DATA TABEL: users (1 Admin/Dosen, 5 Mahasiswa/Anggota)
+-- 1. DATA TABEL: users (1 Admin/Dosen, 5 Anggota Angkatan 24, 15 Anggota Angkatan 25)
 INSERT INTO `users` (`id_user`, `nim`, `nama`, `email`, `password`, `role`, `created_at`) VALUES
-(1, 'DSN001', 'Dosen Pembina HIMTIKA', 'dosen@himtika.or.id', 'password123', 'Admin', NOW()),
-(2, '210001', 'Ahmad Rizal', 'ahmad.rizal@himtika.or.id', 'password123', 'Anggota', NOW()),
-(3, '210002', 'Siti Nurhaliza', 'siti.nurhaliza@himtika.or.id', 'password123', 'Anggota', NOW()),
-(4, '210003', 'Budi Santoso', 'budi.santoso@himtika.or.id', 'password123', 'Anggota', NOW()),
-(5, '210004', 'Dewi Anggraini', 'dewi.anggraini@himtika.or.id', 'password123', 'Anggota', NOW()),
-(6, '210005', 'Eko Prasetyo', 'eko.prasetyo@himtika.or.id', 'password123', 'Anggota', NOW());
+-- Akun Dosen / Admin
+(1, 'DSN001', 'Dosen Pembina HIMTIKA', 'dosen@himtika.or.id', 'D0s3n#H1mt1k@', 'Admin', NOW()),
+
+-- 5 Mahasiswa Angkatan 24
+(2, '2410101001', 'Ahmad Rizal', 'ahmad.rizal@himtika.or.id', 'P@ssw0rd2024!', 'Anggota', NOW()),
+(3, '2410101002', 'Siti Nurhaliza', 'siti.nurhaliza@himtika.or.id', 'S!t1N3rh@l1z4', 'Anggota', NOW()),
+(4, '2410101003', 'Budi Santoso', 'budi.santoso@himtika.or.id', 'B3d1S@nt0s0#', 'Anggota', NOW()),
+(5, '2410101004', 'Dewi Anggraini', 'dewi.anggraini@himtika.or.id', 'D3w!A1nggr@in1', 'Anggota', NOW()),
+(6, '2410101005', 'Eko Prasetyo', 'eko.prasetyo@himtika.or.id', '3k0Pr@s3ty0!', 'Anggota', NOW()),
+
+-- 15 Mahasiswa Angkatan 25
+(7, '2510101001', 'Fajar Ramadhan', 'fajar.ramadhan@himtika.or.id', 'F@j@rR2025!', 'Anggota', NOW()),
+(8, '2510101002', 'Gita Gutawa', 'gita.gutawa@himtika.or.id', 'G!t@G3t@w@25', 'Anggota', NOW()),
+(9, '2510101003', 'Hadi Wijaya', 'hadi.wijaya@himtika.or.id', 'H@d!W!j@y@#25', 'Anggota', NOW()),
+(10, '2510101004', 'Indah Permata', 'indah.permata@himtika.or.id', '1nd@hP3rm@t@!', 'Anggota', NOW()),
+(11, '2510101005', 'Joko Susilo', 'joko.susilo@himtika.or.id', 'J0k0S3s!l0#', 'Anggota', NOW()),
+(12, '2510101006', 'Karin Novilda', 'karin.novilda@himtika.or.id', 'K@r!nN2025!', 'Anggota', NOW()),
+(13, '2510101007', 'Lukman Hakim', 'lukman.hakim@himtika.or.id', 'L3km@nH@k!m#', 'Anggota', NOW()),
+(14, '2510101008', 'Maya Pertiwi', 'maya.pertiwi@himtika.or.id', 'M@y@P3rt!w!25', 'Anggota', NOW()),
+(15, '2510101009', 'Naufal Azhar', 'naufal.azhar@himtika.or.id', 'N@uf@lA2025#', 'Anggota', NOW()),
+(16, '2510101010', 'Olivia Jensen', 'olivia.jensen@himtika.or.id', 'Ol!v!@J2025!', 'Anggota', NOW()),
+(17, '2510101011', 'Putra Utama', 'putra.utama@himtika.or.id', 'P3tr@Ut@m@#25', 'Anggota', NOW()),
+(18, '2510101012', 'Qori Sandioriva', 'qori.sandioriva@himtika.or.id', 'Q0r!S@nd!25!', 'Anggota', NOW()),
+(19, '2510101013', 'Rian Ardianto', 'rian.ardianto@himtika.or.id', 'R!@nA2025#25', 'Anggota', NOW()),
+(20, '2510101014', 'Sania Mariska', 'sania.mariska@himtika.or.id', 'S@n!@M@r!sk@!', 'Anggota', NOW()),
+(21, '2510101015', 'Taufik Hidayat', 'taufik.hidayat@himtika.or.id', 'T@uf!kH!d@y@t#', 'Anggota', NOW());
 
 -- 2. DATA TABEL: kategori_barang
 INSERT INTO `kategori_barang` (`id_kategori`, `nama_kategori`) VALUES

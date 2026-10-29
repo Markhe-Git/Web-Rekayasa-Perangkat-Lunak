@@ -40,7 +40,7 @@ function PeminjamanFormModal({ users, barangList, onClose, onSaved }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <div className="modal-title">Ajukan Peminjaman</div>
+          <div className="modal-title">Ajukan Peminjaman (Admin)</div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <form onSubmit={handleSubmit}>
@@ -107,7 +107,7 @@ function PeminjamanFormModal({ users, barangList, onClose, onSaved }) {
   );
 }
 
-function DetailModal({ peminjaman, users, onClose, onAction }) {
+function DetailModal({ peminjaman, users, onClose, onAction, onDelete, deleting }) {
   const [loading, setLoading] = useState(false);
   const [catatanAdmin, setCatatanAdmin] = useState(peminjaman.CatatanAdmin ?? '');
   const [catatanKembali, setCatatanKembali] = useState({});
@@ -136,7 +136,7 @@ function DetailModal({ peminjaman, users, onClose, onAction }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <div className="modal-title">Detail Peminjaman #{p.IdPeminjaman}</div>
+          <div className="modal-title">Kelola Peminjaman #{p.IdPeminjaman}</div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -200,7 +200,7 @@ function DetailModal({ peminjaman, users, onClose, onAction }) {
 
           {(isPending || isApproved) && (
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Catatan Admin</label>
+              <label className="form-label">Catatan Admin (Approval / Rejection Note)</label>
               <textarea
                 id="input-catatan-admin"
                 className="form-control"
@@ -220,6 +220,19 @@ function DetailModal({ peminjaman, users, onClose, onAction }) {
         </div>
 
         <div className="modal-footer">
+          {onDelete && (
+            <button
+              id="btn-modal-hapus-peminjaman"
+              type="button"
+              className="btn btn-danger"
+              style={{ marginRight: 'auto' }}
+              onClick={() => onDelete(p)}
+              disabled={loading || deleting === p.IdPeminjaman}
+            >
+              {deleting === p.IdPeminjaman ? 'Menghapus...' : '🗑️ Hapus Record'}
+            </button>
+          )}
+
           <button className="btn btn-secondary" onClick={onClose}>Tutup</button>
           {isPending && (
             <>
@@ -242,11 +255,17 @@ function DetailModal({ peminjaman, users, onClose, onAction }) {
   );
 }
 
-export default function Peminjaman() {
+import ConfirmModal from '@/components/ConfirmModal';
+
+export default function Peminjaman({ currentUser }) {
   const [list, setList] = useState([]);
   const [users, setUsers] = useState([]);
   const [barang, setBarang] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(null);
+  const [cancelling, setCancelling] = useState(null);
+  const [confirmDeletePeminjaman, setConfirmDeletePeminjaman] = useState(null);
+  const [confirmCancelPeminjaman, setConfirmCancelPeminjaman] = useState(null);
   const [filterStatus, setFilterStatus] = useState('');
   const [modal, setModal] = useState(null);
   const [detail, setDetail] = useState(null);
@@ -268,16 +287,51 @@ export default function Peminjaman() {
 
   useEffect(() => { fetchPeminjaman(); }, [fetchPeminjaman]);
 
-  const handleCancel = async (p) => {
-    if (!confirm('Batalkan pengajuan peminjaman ini?')) return;
-    const res = await fetch(`/api/peminjaman/${p.IdPeminjaman}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ Action: 'Cancel' }),
-    });
-    const data = await res.json();
-    if (!res.ok) alert(data.Error ?? 'Gagal membatalkan.');
-    else fetchPeminjaman();
+  const executeCancelPeminjaman = async () => {
+    if (!confirmCancelPeminjaman) return;
+    const p = confirmCancelPeminjaman;
+    setCancelling(p.IdPeminjaman);
+    try {
+      const res = await fetch(`/api/peminjaman/${p.IdPeminjaman}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ Action: 'Cancel', IdUser: currentUser?.IdUser }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.Error ?? 'Gagal membatalkan.');
+      } else {
+        setConfirmCancelPeminjaman(null);
+        fetchPeminjaman();
+      }
+    } finally {
+      setCancelling(null);
+    }
+  };
+
+  const executeDeletePeminjaman = async () => {
+    if (!confirmDeletePeminjaman) return;
+    const p = confirmDeletePeminjaman;
+    setDeleting(p.IdPeminjaman);
+    try {
+      const res = await fetch(`/api/peminjaman/${p.IdPeminjaman}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(`Gagal menghapus: ${data.Error ?? 'Terjadi kesalahan.'}`);
+      } else {
+        setConfirmDeletePeminjaman(null);
+        if (detail?.IdPeminjaman === p.IdPeminjaman) {
+          setDetail(null);
+        }
+        fetchPeminjaman();
+      }
+    } catch (err) {
+      alert('Terjadi kesalahan jaringan saat menghapus record peminjaman.');
+    } finally {
+      setDeleting(null);
+    }
   };
 
   return (
@@ -296,12 +350,54 @@ export default function Peminjaman() {
           users={users}
           onClose={() => setDetail(null)}
           onAction={() => { setDetail(null); fetchPeminjaman(); fetch('/api/barang').then(r => r.json()).then(setBarang); }}
+          onDelete={(p) => setConfirmDeletePeminjaman(p)}
+          deleting={deleting}
         />
       )}
 
+      {/* Modal Konfirmasi Hapus Record Peminjaman */}
+      <ConfirmModal
+        isOpen={!!confirmDeletePeminjaman}
+        onClose={() => setConfirmDeletePeminjaman(null)}
+        onConfirm={executeDeletePeminjaman}
+        title="Hapus Record Peminjaman"
+        message={`Apakah Anda yakin ingin menghapus record peminjaman #${confirmDeletePeminjaman?.IdPeminjaman} secara permanen?`}
+        details={confirmDeletePeminjaman ? (
+          <div>
+            <div><strong>Peminjam:</strong> {confirmDeletePeminjaman.User?.Nama} ({confirmDeletePeminjaman.User?.Nim})</div>
+            <div><strong>Status:</strong> {STATUS_LABEL[confirmDeletePeminjaman.StatusPeminjaman] || confirmDeletePeminjaman.StatusPeminjaman}</div>
+            <div><strong>Tujuan:</strong> {confirmDeletePeminjaman.TujuanPinjam}</div>
+            <div><strong>Jumlah Barang:</strong> {confirmDeletePeminjaman.DetailPeminjaman?.length || 0} unit</div>
+          </div>
+        ) : null}
+        confirmText="Ya, Hapus Record"
+        confirmVariant="danger"
+        icon="🗑️"
+        loading={deleting !== null}
+      />
+
+      {/* Modal Konfirmasi Batalkan Peminjaman */}
+      <ConfirmModal
+        isOpen={!!confirmCancelPeminjaman}
+        onClose={() => setConfirmCancelPeminjaman(null)}
+        onConfirm={executeCancelPeminjaman}
+        title="Batalkan Pengajuan Peminjaman"
+        message={`Apakah Anda yakin ingin membatalkan pengajuan peminjaman #${confirmCancelPeminjaman?.IdPeminjaman}?`}
+        details={confirmCancelPeminjaman ? (
+          <div>
+            <div><strong>Tujuan:</strong> {confirmCancelPeminjaman.TujuanPinjam}</div>
+            <div><strong>Tanggal Pinjam:</strong> {new Date(confirmCancelPeminjaman.TglPinjam).toLocaleDateString('id-ID')}</div>
+          </div>
+        ) : null}
+        confirmText="Ya, Batalkan Pengajuan"
+        confirmVariant="warning"
+        icon="↩️"
+        loading={cancelling !== null}
+      />
+
       <div className="page-header">
-        <div className="page-title">Peminjaman</div>
-        <div className="page-subtitle">Kelola pengajuan dan persetujuan peminjaman barang</div>
+        <div className="page-title">Peminjaman (Admin)</div>
+        <div className="page-subtitle">Kelola pengajuan, persetujuan, dan pengembalian barang</div>
       </div>
 
       <div className="page-body">
@@ -343,38 +439,60 @@ export default function Peminjaman() {
                   <tr><th>#</th><th>Peminjam</th><th>Tujuan</th><th>Tgl Pinjam</th><th>Rencana Kembali</th><th>Barang</th><th>Status</th><th>Aksi</th></tr>
                 </thead>
                 <tbody>
-                  {list.map((p, i) => (
-                    <tr key={p.IdPeminjaman}>
-                      <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{i + 1}</td>
-                      <td>
-                        <div style={{ fontWeight: 500 }}>{p.User?.Nama}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.User?.Nim}</div>
-                      </td>
-                      <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {p.TujuanPinjam}
-                      </td>
-                      <td style={{ fontSize: 13 }}>{new Date(p.TglPinjam).toLocaleDateString('id-ID')}</td>
-                      <td style={{ fontSize: 13 }}>{new Date(p.TglRencanaKembali).toLocaleDateString('id-ID')}</td>
-                      <td>
-                        <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                          {p.DetailPeminjaman?.length ?? 0} unit
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`badge badge-${p.StatusPeminjaman.toLowerCase()}`}>
-                          {STATUS_LABEL[p.StatusPeminjaman]}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="action-btns">
-                          <button className="btn btn-secondary btn-sm" onClick={() => setDetail(p)}>Detail</button>
-                          {p.StatusPeminjaman === 'Pending' && (
-                            <button className="btn btn-warning btn-sm" onClick={() => handleCancel(p)}>Batal</button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {list.map((p, i) => {
+                    const isMyOwnLoan = currentUser && p.IdUser === currentUser.IdUser;
+                    return (
+                      <tr key={p.IdPeminjaman}>
+                        <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{i + 1}</td>
+                        <td>
+                          <div style={{ fontWeight: 500 }}>
+                            {p.User?.Nama} {isMyOwnLoan && <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600 }}>(Saya)</span>}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.User?.Nim}</div>
+                        </td>
+                        <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {p.TujuanPinjam}
+                        </td>
+                        <td style={{ fontSize: 13 }}>{new Date(p.TglPinjam).toLocaleDateString('id-ID')}</td>
+                        <td style={{ fontSize: 13 }}>{new Date(p.TglRencanaKembali).toLocaleDateString('id-ID')}</td>
+                        <td>
+                          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                            {p.DetailPeminjaman?.length ?? 0} unit
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`badge badge-${p.StatusPeminjaman.toLowerCase()}`}>
+                            {STATUS_LABEL[p.StatusPeminjaman]}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="action-btns">
+                            <button className="btn btn-secondary btn-sm" onClick={() => setDetail(p)}>Detail & Aksi</button>
+                            {/* Tombol Batal HANYA muncul untuk peminjaman milik diri sendiri */}
+                            {p.StatusPeminjaman === 'Pending' && isMyOwnLoan && (
+                              <button
+                                className="btn btn-warning btn-sm"
+                                onClick={() => setConfirmCancelPeminjaman(p)}
+                                disabled={cancelling === p.IdPeminjaman}
+                              >
+                                {cancelling === p.IdPeminjaman ? '...' : 'Batal'}
+                              </button>
+                            )}
+                            {/* Tombol Hapus Record Peminjaman untuk Admin */}
+                            <button
+                              id={`btn-hapus-peminjaman-${p.IdPeminjaman}`}
+                              className="btn btn-danger btn-sm"
+                              onClick={() => setConfirmDeletePeminjaman(p)}
+                              disabled={deleting === p.IdPeminjaman}
+                              title="Hapus record peminjaman ini"
+                            >
+                              {deleting === p.IdPeminjaman ? '...' : 'Hapus'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}

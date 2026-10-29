@@ -86,6 +86,8 @@ function BarangModal({ barang, kategoriList, onClose, onSaved }) {
   );
 }
 
+import ConfirmModal from '@/components/ConfirmModal';
+
 export default function Barang() {
   const [barang, setBarang] = useState([]);
   const [kategori, setKategori] = useState([]);
@@ -95,6 +97,7 @@ export default function Barang() {
   const [filterStatus, setFilterStatus] = useState('');
   const [modal, setModal] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [confirmDeleteBarang, setConfirmDeleteBarang] = useState(null);
 
   const fetchBarang = useCallback(async () => {
     setLoading(true);
@@ -114,14 +117,21 @@ export default function Barang() {
 
   useEffect(() => { fetchBarang(); }, [fetchBarang]);
 
-  const handleDelete = async (b) => {
-    if (!confirm(`Hapus barang "${b.NamaBarang}"?`)) return;
-    setDeleting(b.IdBarang);
-    const res = await fetch(`/api/barang/${b.IdBarang}`, { method: 'DELETE' });
-    const data = await res.json();
-    if (!res.ok) { alert(data.Error ?? 'Gagal menghapus.'); }
-    else fetchBarang();
-    setDeleting(null);
+  const executeDeleteBarang = async () => {
+    if (!confirmDeleteBarang) return;
+    setDeleting(confirmDeleteBarang.IdBarang);
+    try {
+      const res = await fetch(`/api/barang/${confirmDeleteBarang.IdBarang}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.Error ?? 'Gagal menghapus.');
+      } else {
+        setConfirmDeleteBarang(null);
+        fetchBarang();
+      }
+    } finally {
+      setDeleting(null);
+    }
   };
 
   return (
@@ -135,9 +145,30 @@ export default function Barang() {
         />
       )}
 
+      {/* Modal Konfirmasi Hapus Barang */}
+      <ConfirmModal
+        isOpen={!!confirmDeleteBarang}
+        onClose={() => setConfirmDeleteBarang(null)}
+        onConfirm={executeDeleteBarang}
+        title="Hapus Barang Inventaris"
+        message={`Apakah Anda yakin ingin menghapus barang "${confirmDeleteBarang?.NamaBarang}" dari inventaris?`}
+        details={confirmDeleteBarang ? (
+          <div>
+            <div><strong>Kode Inventaris:</strong> {confirmDeleteBarang.KodeInventaris}</div>
+            <div><strong>Kategori:</strong> {confirmDeleteBarang.Kategori?.NamaKategori ?? '-'}</div>
+            <div><strong>Kondisi:</strong> {confirmDeleteBarang.Kondisi}</div>
+            <div><strong>Status:</strong> {confirmDeleteBarang.Status}</div>
+          </div>
+        ) : null}
+        confirmText="Ya, Hapus Barang"
+        confirmVariant="danger"
+        icon="📦"
+        loading={deleting !== null}
+      />
+
       <div className="page-header">
-        <div className="page-title">Inventaris Barang</div>
-        <div className="page-subtitle">Katalog dan manajemen barang organisasi</div>
+        <div className="page-title">Inventaris Barang (Admin)</div>
+        <div className="page-subtitle">Kelola dan update data barang inventaris organisasi</div>
       </div>
 
       <div className="page-body">
@@ -237,18 +268,18 @@ export default function Barang() {
                           )}
                         </td>
                         <td>
-                        <div className="action-btns">
-                          <button className="btn btn-secondary btn-sm" onClick={() => setModal(b)}>Edit</button>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleDelete(b)}
-                            disabled={deleting === b.IdBarang}
-                          >
-                            {deleting === b.IdBarang ? '...' : 'Hapus'}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                          <div className="action-btns">
+                            <button className="btn btn-secondary btn-sm" onClick={() => setModal(b)}>Edit</button>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => setConfirmDeleteBarang(b)}
+                              disabled={deleting === b.IdBarang}
+                            >
+                              {deleting === b.IdBarang ? '...' : 'Hapus'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
                     );
                   })}
                 </tbody>
