@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import ConfirmModal from '@/components/ConfirmModal';
 
 function KategoriModal({ kategori, onClose, onSaved }) {
   const [nama, setNama] = useState(kategori?.NamaKategori ?? '');
@@ -62,6 +63,7 @@ export default function Kategori() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const fetchKategori = useCallback(async () => {
     setLoading(true);
@@ -73,14 +75,17 @@ export default function Kategori() {
 
   useEffect(() => { fetchKategori(); }, [fetchKategori]);
 
-  const handleDelete = async (k) => {
-    if (!confirm(`Hapus kategori "${k.NamaKategori}"?`)) return;
-    setDeleting(k.IdKategori);
-    const res = await fetch(`/api/kategori/${k.IdKategori}`, { method: 'DELETE' });
-    const data = await res.json();
-    if (!res.ok) { alert(data.Error ?? 'Gagal menghapus.'); }
-    else fetchKategori();
-    setDeleting(null);
+  const executeDelete = async () => {
+    if (!confirmDelete) return;
+    setDeleting(confirmDelete.IdKategori);
+    try {
+      const res = await fetch(`/api/kategori/${confirmDelete.IdKategori}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) { alert(data.Error ?? 'Gagal menghapus.'); }
+      else { setConfirmDelete(null); fetchKategori(); }
+    } finally {
+      setDeleting(null);
+    }
   };
 
   return (
@@ -92,6 +97,19 @@ export default function Kategori() {
           onSaved={() => { setModal(null); fetchKategori(); }}
         />
       )}
+
+      {/* Modal Konfirmasi Hapus Kategori */}
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={executeDelete}
+        title="Hapus Kategori"
+        message={`Apakah Anda yakin ingin menghapus kategori "${confirmDelete?.NamaKategori}"?`}
+        confirmText="Ya, Hapus"
+        confirmVariant="danger"
+        icon="🗑️"
+        loading={deleting === confirmDelete?.IdKategori}
+      />
 
       <div className="page-header">
         <div className="page-title">Kategori Barang</div>
@@ -136,7 +154,7 @@ export default function Kategori() {
                           <button className="btn btn-secondary btn-sm" onClick={() => setModal(k)}>Edit</button>
                           <button
                             className="btn btn-danger btn-sm"
-                            onClick={() => handleDelete(k)}
+                            onClick={() => setConfirmDelete(k)}
                             disabled={deleting === k.IdKategori}
                           >
                             {deleting === k.IdKategori ? '...' : 'Hapus'}

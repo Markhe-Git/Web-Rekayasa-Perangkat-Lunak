@@ -30,7 +30,7 @@ function RecentRow({ item }) {
   );
 }
 
-export default function Dashboard() {
+export default function Dashboard({ currentUser }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -73,11 +73,39 @@ export default function Dashboard() {
         <div className="page-subtitle">Ringkasan sistem peminjaman barang HIMTIKA</div>
       </div>
       <div className="page-body">
+        {currentUser && (
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            padding: '16px 20px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12
+          }}>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>
+                Selamat datang, {currentUser.Nama}! 👋
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+                {currentUser.Role === 'Admin'
+                  ? 'Anda memiliki hak akses Administrator penuh ke seluruh modul sistem.'
+                  : 'Anda masuk sebagai Anggota (Akses Dashboard, Peminjaman, dan Inventaris mode lihat).'}
+              </div>
+            </div>
+            <span className={`role-pill ${currentUser.Role === 'Admin' ? 'pill-admin' : 'pill-member'}`}>
+              {currentUser.Role === 'Admin' ? '🛡️ Administrator' : '👤 Anggota'}
+            </span>
+          </div>
+        )}
         <div className="stat-grid">
-          <StatCard label="Total Barang" value={Stats.TotalBarang} sub={`${Stats.BarangTersedia} tersedia`} icon="📦" variant="accent" />
-          <StatCard label="Peminjaman Pending" value={Stats.PeminjamanPending} sub="Menunggu persetujuan" icon="⏳" variant="warning" />
-          <StatCard label="Sedang Dipinjam" value={Stats.BarangDipinjam} sub="unit aktif" icon="🔄" variant="success" />
-          <StatCard label="Total Pengguna" value={Stats.TotalUsers} sub={`${Stats.TotalKategori} kategori`} icon="👥" variant="danger" />
+          <StatCard label="Barang Tersedia" value={Stats.BarangTersedia} icon="📦" variant="accent" />
+          <StatCard label="Menunggu Persetujuan" value={Stats.PeminjamanPending} icon="⏳" variant="warning" />
+          <StatCard label="Sedang Dipinjam" value={Stats.BarangDipinjam} icon="🔄" variant="success" />
+          <StatCard label="Total Pengguna" value={Stats.TotalUsers} icon="👥" variant="danger" />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>

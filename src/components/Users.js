@@ -1,8 +1,9 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import ConfirmModal from '@/components/ConfirmModal';
 
-function UserModal({ user, onClose, onSaved }) {
-  const [form, setForm] = useState({ Nim: '', Nama: '', Email: '', Password: '', Role: 'Anggota', ...user });
+function AddUserModal({ onClose, onSaved }) {
+  const [form, setForm] = useState({ Nim: '', Nama: '', Email: '', Password: '', Role: 'Anggota' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -11,14 +12,13 @@ function UserModal({ user, onClose, onSaved }) {
     setLoading(true);
     setError('');
     try {
-      const isEdit = !!user?.IdUser;
-      const res = await fetch(isEdit ? `/api/users/${user.IdUser}` : '/api/users', {
-        method: isEdit ? 'PUT' : 'POST',
+      const res = await fetch('/api/users', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.Error ?? 'Terjadi kesalahan.'); return; }
+      if (!res.ok) { setError(data.Error ?? 'Terjadi kesalahan saat menambahkan pengguna.'); return; }
       onSaved();
     } finally { setLoading(false); }
   };
@@ -29,7 +29,7 @@ function UserModal({ user, onClose, onSaved }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <div className="modal-title">{user?.IdUser ? 'Edit Pengguna' : 'Tambah Pengguna'}</div>
+          <div className="modal-title">Tambah Pengguna Baru</div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <form onSubmit={handleSubmit}>
@@ -57,8 +57,8 @@ function UserModal({ user, onClose, onSaved }) {
               <input id="input-email" className="form-control" type="email" value={form.Email} onChange={set('Email')} required placeholder="email@himtika.or.id" />
             </div>
             <div className="form-group">
-              <label className="form-label">{user?.IdUser ? 'Password Baru (kosongkan jika tidak diubah)' : 'Password'}</label>
-              <input id="input-password" className="form-control" type="password" value={form.Password} onChange={set('Password')} {...(!user?.IdUser ? { required: true } : {})} placeholder="••••••••" />
+              <label className="form-label">Password</label>
+              <input id="input-password" className="form-control" type="password" value={form.Password} onChange={set('Password')} required placeholder="••••••••" />
             </div>
           </div>
           <div className="modal-footer">
@@ -73,12 +73,110 @@ function UserModal({ user, onClose, onSaved }) {
   );
 }
 
+function EditRoleModal({ user, onClose, onSaved }) {
+  const [role, setRole] = useState(user?.Role || 'Anggota');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (role === user.Role) {
+      onClose();
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/users/${user.IdUser}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          Nim: user.Nim,
+          Nama: user.Nama,
+          Email: user.Email,
+          Role: role,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.Error ?? 'Gagal mengubah role pengguna.');
+        return;
+      }
+      onSaved();
+    } catch (err) {
+      setError('Terjadi kesalahan koneksi.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" style={{ maxWidth: 440 }} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <div className="modal-title">Ubah Role Pengguna</div>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body">
+            {error && <div className="alert alert-error">⚠ {error}</div>}
+
+            <div style={{
+              background: 'var(--bg-primary)',
+              padding: '12px 16px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border)',
+              marginBottom: 18,
+            }}>
+              <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 15, marginBottom: 4 }}>
+                {user.Nama}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <span>NIM: <strong style={{ color: 'var(--text-secondary)' }}>{user.Nim}</strong></span>
+                <span>Email: <strong style={{ color: 'var(--text-secondary)' }}>{user.Email}</strong></span>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="select-role" className="form-label">
+                Pilih Role <span style={{ color: 'var(--danger)' }}>*</span>
+              </label>
+              <select
+                id="select-role"
+                className="form-control"
+                value={role}
+                onChange={e => setRole(e.target.value)}
+              >
+                <option value="Anggota">Anggota</option>
+                <option value="Admin">Admin</option>
+              </select>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.5 }}>
+                💡 Admin hanya berwenang mengubah Role/hak akses. Data akun lainnya (NIM, Nama, Email, Password) dikelola secara mandiri oleh pengguna.
+              </p>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
+              Batal
+            </button>
+            <button id="btn-save-role" type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? 'Menyimpan...' : 'Simpan Role'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function Users() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [modal, setModal] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editRoleUser, setEditRoleUser] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -90,25 +188,55 @@ export default function Users() {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  const handleDelete = async (user) => {
-    if (!confirm(`Hapus pengguna "${user.Nama}"? Tindakan ini tidak dapat dibatalkan.`)) return;
-    setDeleting(user.IdUser);
-    const res = await fetch(`/api/users/${user.IdUser}`, { method: 'DELETE' });
-    const data = await res.json();
-    if (!res.ok) { alert(data.Error ?? 'Gagal menghapus.'); }
-    else fetchUsers();
-    setDeleting(null);
+  const executeDelete = async () => {
+    if (!confirmDelete) return;
+    setDeleting(confirmDelete.IdUser);
+    try {
+      const res = await fetch(`/api/users/${confirmDelete.IdUser}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) { alert(data.Error ?? 'Gagal menghapus.'); }
+      else { setConfirmDelete(null); fetchUsers(); }
+    } finally {
+      setDeleting(null);
+    }
   };
 
   return (
     <div className="page-content">
-      {modal !== null && (
-        <UserModal
-          user={modal === 'create' ? null : modal}
-          onClose={() => setModal(null)}
-          onSaved={() => { setModal(null); fetchUsers(); }}
+      {showAddModal && (
+        <AddUserModal
+          onClose={() => setShowAddModal(false)}
+          onSaved={() => { setShowAddModal(false); fetchUsers(); }}
         />
       )}
+
+      {editRoleUser && (
+        <EditRoleModal
+          user={editRoleUser}
+          onClose={() => setEditRoleUser(null)}
+          onSaved={() => { setEditRoleUser(null); fetchUsers(); }}
+        />
+      )}
+
+      {/* Modal Konfirmasi Hapus Pengguna */}
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={executeDelete}
+        title="Hapus Pengguna"
+        message={`Apakah Anda yakin ingin menghapus pengguna "${confirmDelete?.Nama}"? Tindakan ini tidak dapat dibatalkan.`}
+        details={confirmDelete ? (
+          <div>
+            <div><strong>NIM:</strong> {confirmDelete.Nim}</div>
+            <div><strong>Email:</strong> {confirmDelete.Email}</div>
+            <div><strong>Role:</strong> {confirmDelete.Role}</div>
+          </div>
+        ) : null}
+        confirmText="Ya, Hapus"
+        confirmVariant="danger"
+        icon="🗑️"
+        loading={deleting === confirmDelete?.IdUser}
+      />
 
       <div className="page-header">
         <div className="page-title">Pengguna</div>
@@ -130,7 +258,7 @@ export default function Users() {
             </div>
           </div>
           <div className="toolbar-right">
-            <button id="btn-tambah-user" className="btn btn-primary" onClick={() => setModal('create')}>
+            <button id="btn-tambah-user" className="btn btn-primary" onClick={() => setShowAddModal(true)}>
               + Tambah Pengguna
             </button>
           </div>
@@ -158,15 +286,34 @@ export default function Users() {
                       <td>{u.Nim}</td>
                       <td>{u.Nama}</td>
                       <td style={{ color: 'var(--text-secondary)' }}>{u.Email}</td>
-                      <td><span className={`badge badge-${u.Role.toLowerCase()}`}>{u.Role}</span></td>
+                      <td>
+                        <button
+                          type="button"
+                          className={`badge badge-${u.Role.toLowerCase()}`}
+                          onClick={() => setEditRoleUser(u)}
+                          style={{ cursor: 'pointer', border: 'none', font: 'inherit' }}
+                          title="Klik untuk mengubah role pengguna"
+                        >
+                          {u.Role} ✏️
+                        </button>
+                      </td>
                       <td style={{ fontSize: 13 }}>{new Date(u.CreatedAt).toLocaleDateString('id-ID')}</td>
                       <td>
                         <div className="action-btns">
-                          <button className="btn btn-secondary btn-sm" onClick={() => setModal(u)}>Edit</button>
                           <button
+                            id={`btn-edit-role-${u.IdUser}`}
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setEditRoleUser(u)}
+                            title="Ubah Role Pengguna"
+                          >
+                            Ubah Role
+                          </button>
+                          <button
+                            id={`btn-delete-user-${u.IdUser}`}
                             className="btn btn-danger btn-sm"
-                            onClick={() => handleDelete(u)}
+                            onClick={() => setConfirmDelete(u)}
                             disabled={deleting === u.IdUser}
+                            title="Hapus Pengguna"
                           >
                             {deleting === u.IdUser ? '...' : 'Hapus'}
                           </button>

@@ -67,6 +67,9 @@ export async function PUT(request, { params }) {
     ]);
   } else if (Action === 'Cancel') {
     if (current.StatusPeminjaman !== 'Pending') return Response.json({ Error: 'Hanya peminjaman Pending yang bisa dibatalkan.' }, { status: 400 });
+    if (body.IdUser && current.IdUser !== Number(body.IdUser)) {
+      return Response.json({ Error: 'Anda tidak dapat membatalkan pengajuan peminjaman milik pengguna lain.' }, { status: 403 });
+    }
     await prisma.peminjaman.update({ where: { IdPeminjaman: Number(id) }, data: { StatusPeminjaman: 'Cancelled' } });
   } else {
     return Response.json({ Error: 'Action tidak valid.' }, { status: 400 });
@@ -84,8 +87,10 @@ export async function DELETE(request, { params }) {
 
   const peminjaman = await prisma.peminjaman.findUnique({ where: { IdPeminjaman: Number(id) } });
   if (!peminjaman) return Response.json({ Error: 'Peminjaman tidak ditemukan.' }, { status: 404 });
-  if (peminjaman.StatusPeminjaman !== 'Pending') return Response.json({ Error: 'Hanya peminjaman Pending yang bisa dibatalkan/dihapus.' }, { status: 400 });
+  if (peminjaman.StatusPeminjaman === 'Approved') {
+    return Response.json({ Error: 'Peminjaman berstatus Disetujui (Approved) masih berlangsung. Selesaikan pengembalian barang terlebih dahulu sebelum menghapus record.' }, { status: 400 });
+  }
 
   await prisma.peminjaman.delete({ where: { IdPeminjaman: Number(id) } });
-  return Response.json({ Message: 'Peminjaman berhasil dihapus.' });
+  return Response.json({ Message: 'Record peminjaman berhasil dihapus.' });
 }
