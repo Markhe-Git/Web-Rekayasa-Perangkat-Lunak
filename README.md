@@ -1,6 +1,8 @@
 # Website-Rekayasa-Perangkat-Lunak
 Membuat proyek website untuk mata kuliah Rekayasa Perangkat Lunak.
 
+Link Video Demo Website: https://drive.google.com/drive/folders/1_hPwOaPokIH_uTlSSQjoAnfpFfkhIZaE?usp=sharing
+
 Nama Website: Pintika (Pinjam HIMTIKA)
 1. Tema Website
 - website yang menampung data peminjaman barang agar bisa terlacak.
