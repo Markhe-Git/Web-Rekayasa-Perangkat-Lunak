@@ -61,36 +61,52 @@ DATABASE_URL="mysql://root:@localhost:3306/pintika_db"
 
 ### 4. Setup & Inisialisasi Database
 
-#### Langkah 4.1: Buat Database di MySQL
-Pastikan service MySQL Anda sudah berjalan (misal: klik **Start** pada MySQL di control panel XAMPP). Buat database baru bernama `pintika_db`:
-```sql
-CREATE DATABASE pintika_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
+#### Langkah 4.1: Aktifkan Database MySQL
+Pastikan service MySQL Anda sudah berjalan:
+* Buka **XAMPP Control Panel** dan klik tombol **Start** pada modul MySQL (atau melalui Laragon / Docker).
+* Anda dapat mengelola database melalui browser via **phpMyAdmin** (`http://localhost/phpmyadmin`) atau terminal MySQL.
 
-#### Langkah 4.2: Impor Skema & Data Awal (Pilih Salah Satu Metode)
+#### Langkah 4.2: Buat Skema & Isi Data Awal Menggunakan `dump.sql` dan `dummydata.sql` (Pilih Salah Satu Metode)
 
-* **Opsi A (Paling Cepat - Impor File SQL):**
-  Impor dataset siap pakai `dummydata.sql` yang sudah mencakup struktur tabel, data kategori, barang, akun Admin, dan Anggota:
-  - **PowerShell (Windows):**
-    ```powershell
-    Get-Content dummydata.sql | mysql -u root pintika_db
-    ```
-  - **Command Prompt (CMD) / Bash:**
-    ```bash
-    mysql -u root pintika_db < dummydata.sql
-    ```
-  - **phpMyAdmin:**
-    Buka `http://localhost/phpmyadmin` -> Pilih `pintika_db` -> Tab **Import** -> Pilih file `dummydata.sql` -> Klik **Go**.
+* **Opsi A (Menggunakan File SQL - Direkomendasikan):**
+  Proyek menyediakan 2 file SQL terpisah:
+  1. `dump.sql`: Berisi definisi skema (membuat database `pintika_db` dan seluruh tabel relasional).
+  2. `dummydata.sql`: Berisi data awal/dummy (akun Admin, akun Anggota, kategori, barang, dan riwayat peminjaman).
 
-* **Opsi B (Melalui Prisma CLI):**
+  **Cara Impor via Terminal (PowerShell Windows):**
+  ```powershell
+  # 1. Eksekusi skema tabel
+  Get-Content dump.sql | mysql -u root
+
+  # 2. Masukkan data dummy awal
+  Get-Content dummydata.sql | mysql -u root pintika_db
+  ```
+
+  **Cara Impor via Command Prompt (CMD) / Bash:**
   ```bash
-  # Sinkronkan skema prisma ke database
+  # 1. Eksekusi skema tabel
+  mysql -u root < dump.sql
+
+  # 2. Masukkan data dummy awal
+  mysql -u root pintika_db < dummydata.sql
+  ```
+
+  **Cara Impor via phpMyAdmin:**
+  1. Buka browser di `http://localhost/phpmyadmin`.
+  2. Klik tab **Import** pada menu utama atas.
+  3. Pilih file `dump.sql` ➔ Klik **Go / Impor** (database `pintika_db` dan tabel-tabelnya akan otomatis terbuat).
+  4. Pilih database `pintika_db` di panel kiri, klik tab **Import**, lalu pilih file `dummydata.sql` ➔ Klik **Go / Impor**.
+
+* **Opsi B (Menggunakan Prisma CLI & Seeder):**
+  Jika Anda ingin menggunakan generator Prisma:
+  ```bash
+  # 1. Sinkronkan skema prisma ke database
   npx prisma db push
 
-  # Generate Prisma Client library
+  # 2. Generate Prisma Client library
   npx prisma generate
 
-  # Jalankan seeder bawaan
+  # 3. Jalankan seeder bawaan
   npm run db:seed
   ```
 
