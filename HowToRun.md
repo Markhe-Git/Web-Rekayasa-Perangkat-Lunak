@@ -43,13 +43,9 @@ Sebelum memulai, pastikan perangkat Anda telah terpasang perangkat lunak berikut
 
 ## 3. Konfigurasi Database
 
-### 3.1. Buat Database MySQL
-Nyalakan service MySQL Anda (misalnya melalui Control Panel **XAMPP** dengan mengklik tombol **Start** pada modul MySQL).
-
-Buka client MySQL (CLI, phpMyAdmin, DBeaver, atau TablePlus), lalu buat database baru bernama `pintika_db`:
-```sql
-CREATE DATABASE pintika_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
+### 3.1. Aktifkan Database MySQL
+Nyalakan service MySQL Anda (misalnya melalui Control Panel **XAMPP** dengan mengklik tombol **Start** pada modul MySQL, atau melalui Laragon / Docker).
+Anda dapat mengelolanya melalui antarmuka web **phpMyAdmin** (`http://localhost/phpmyadmin`) atau terminal MySQL.
 
 ### 3.2. Konfigurasi File Environment (`.env`)
 Pastikan file `.env` di *root folder* proyek memiliki format string koneksi database yang sesuai:
@@ -61,22 +57,34 @@ DATABASE_URL="mysql://<username>:<password>@localhost:3306/pintika_db"
 > DATABASE_URL="mysql://root:@localhost:3306/pintika_db"
 > ```
 
-### 3.3. Sinkronisasi Skema Database & Data Awal (Pilih Salah Satu Metode)
+### 3.3. Buat Database & Isi Data Menggunakan `dump.sql` dan `dummydata.sql` (Pilih Salah Satu Metode)
 
 #### **Metode A: Mengimpor File SQL Langsung (Direkomendasikan)**
-File `dummydata.sql` telah disiapkan lengkap dengan struktur tabel dan data pengguna (Admin & Anggota):
-* **Melalui Terminal (PowerShell):**
+Proyek telah dilengkapi dengan dua file SQL:
+1. `dump.sql`: Membuat database `pintika_db` beserta seluruh struktur tabel relasional (DDL).
+2. `dummydata.sql`: Mengisi data awal akun pengguna (Admin & Anggota), kategori, barang, dan riwayat peminjaman (DML).
+
+* **Melalui Terminal (PowerShell Windows):**
   ```powershell
+  # 1. Eksekusi pembuatan database & skema tabel
+  Get-Content dump.sql | mysql -u root
+
+  # 2. Masukkan data dummy awal
   Get-Content dummydata.sql | mysql -u root pintika_db
   ```
 * **Melalui Terminal (Bash / CMD):**
   ```bash
-  mysql -u root -p pintika_db < dummydata.sql
+  # 1. Eksekusi pembuatan database & skema tabel
+  mysql -u root < dump.sql
+
+  # 2. Masukkan data dummy awal
+  mysql -u root pintika_db < dummydata.sql
   ```
 * **Melalui phpMyAdmin:**
-  1. Buka browser: `http://localhost/phpmyadmin`
-  2. Pilih database `pintika_db`.
-  3. Klik tab **Import** ➔ Pilih file `dummydata.sql` ➔ Klik **Go / Impor**.
+  1. Buka browser: `http://localhost/phpmyadmin`.
+  2. Klik tab **Import** pada menu navigasi atas.
+  3. Pilih file `dump.sql` ➔ Klik **Go / Impor** (database `pintika_db` dan tabel-tabelnya akan otomatis terbuat).
+  4. Pilih database `pintika_db` di sidebar kiri, klik tab **Import**, lalu pilih file `dummydata.sql` ➔ Klik **Go / Impor**.
 
 #### **Metode B: Menggunakan Prisma CLI**
 Jika ingin memanfaatkan sinkronisasi skema Prisma:
