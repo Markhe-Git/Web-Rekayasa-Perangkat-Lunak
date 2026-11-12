@@ -15,7 +15,7 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   const { id } = await params;
   const body = await request.json();
-  const { Nim, Nama, Email, Password, Role } = body;
+  const { Nim, Nama, Email, Password, OldPassword, Role } = body;
 
   const existing = await prisma.users.findFirst({
     where: { OR: [{ Nim }, { Email }], NOT: { IdUser: Number(id) } },
@@ -23,7 +23,18 @@ export async function PUT(request, { params }) {
   if (existing) return Response.json({ Error: 'NIM atau Email sudah digunakan.' }, { status: 409 });
 
   const updateData = { Nim, Nama, Email, Role };
-  if (Password) updateData.Password = Password;
+  if (Password) {
+    if (OldPassword) {
+      const currentUserRecord = await prisma.users.findUnique({
+        where: { IdUser: Number(id) },
+        select: { Password: true },
+      });
+      if (!currentUserRecord || currentUserRecord.Password !== OldPassword) {
+        return Response.json({ Error: 'Password lama yang Anda masukkan salah.' }, { status: 400 });
+      }
+    }
+    updateData.Password = Password;
+  }
 
   const user = await prisma.users.update({ where: { IdUser: Number(id) }, data: updateData });
   return Response.json(user);

@@ -12,6 +12,7 @@ const allNavItems = [
 
 export default function Sidebar({ activePage, onNavigate, currentUser, onLogout }) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const role = currentUser?.Role || 'Admin';
   const navItems = allNavItems.filter(item => item.roles.includes(role));
@@ -19,15 +20,63 @@ export default function Sidebar({ activePage, onNavigate, currentUser, onLogout 
 
   const userInitial = currentUser?.Nama ? currentUser.Nama.charAt(0).toUpperCase() : (role === 'Admin' ? 'A' : 'M');
 
+  const handleNavClick = (pageId) => {
+    onNavigate(pageId);
+    setIsMobileOpen(false);
+  };
+
   return (
     <>
-      <aside className="sidebar">
+      {/* Mobile Topbar (Hanya tampil pada layar <= 768px) */}
+      <header className="mobile-topbar">
+        <button
+          type="button"
+          className="mobile-menu-btn"
+          onClick={() => setIsMobileOpen((prev) => !prev)}
+          aria-label={isMobileOpen ? 'Tutup navigasi' : 'Buka navigasi'}
+        >
+          {isMobileOpen ? '✕' : '☰'}
+        </button>
+
+        <div className="mobile-brand" onClick={() => handleNavClick('dashboard')} style={{ cursor: 'pointer' }}>
+          <span className="mobile-brand-icon">📌</span>
+          <span className="mobile-brand-title">Pintika</span>
+          <span className="mobile-brand-badge">{role === 'Admin' ? 'Admin' : 'Anggota'}</span>
+        </div>
+
+        <div
+          className="mobile-avatar"
+          onClick={() => handleNavClick('profil')}
+          title="Buka Profil Saya"
+        >
+          {userInitial}
+        </div>
+      </header>
+
+      {/* Backdrop overlay saat mobile drawer terbuka */}
+      {isMobileOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setIsMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside className={`sidebar${isMobileOpen ? ' mobile-open' : ''}`}>
         <div className="sidebar-logo">
           <div className="sidebar-logo-icon">📌</div>
           <div className="sidebar-logo-text">
             <h1 className="sidebar-logo-title">Pintika</h1>
             <p className="sidebar-logo-subtitle">HIMTIKA</p>
           </div>
+          <button
+            type="button"
+            className="sidebar-close-btn"
+            onClick={() => setIsMobileOpen(false)}
+            aria-label="Tutup navigasi"
+          >
+            ✕
+          </button>
         </div>
 
         <nav className="sidebar-nav">
@@ -39,7 +88,7 @@ export default function Sidebar({ activePage, onNavigate, currentUser, onLogout 
                   key={item.id}
                   id={`nav-${item.id}`}
                   className={`nav-item${activePage === item.id ? ' active' : ''}`}
-                  onClick={() => onNavigate(item.id)}
+                  onClick={() => handleNavClick(item.id)}
                 >
                   <span className="nav-item-icon">{item.icon}</span>
                   {item.label}
@@ -52,7 +101,7 @@ export default function Sidebar({ activePage, onNavigate, currentUser, onLogout 
         <div className="sidebar-footer">
           <div
             className={`sidebar-user${activePage === 'profil' ? ' active-user' : ''}`}
-            onClick={() => onNavigate('profil')}
+            onClick={() => handleNavClick('profil')}
             style={{ cursor: 'pointer' }}
             title="Buka profil saya"
           >
@@ -71,6 +120,7 @@ export default function Sidebar({ activePage, onNavigate, currentUser, onLogout 
                 className="sidebar-logout-btn"
                 onClick={(e) => {
                   e.stopPropagation();
+                  setIsMobileOpen(false);
                   setShowLogoutModal(true);
                 }}
                 title="Keluar dari akun"
