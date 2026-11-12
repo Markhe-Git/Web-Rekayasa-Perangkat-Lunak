@@ -4,6 +4,8 @@ Pintika adalah aplikasi web manajemen inventaris dan sirkulasi peminjaman barang
 
 ---
 
+## ▶️ Deployment Link: https://pintika.vercel.app/
+
 ## 🌟 Fitur Utama
 
 - **🛡️ Autentikasi & Otorisasi RBAC**: Pemisahan hak akses antara **Admin** (Pengurus Perlengkapan HIMTIKA) dan **Anggota** (Mahasiswa).
