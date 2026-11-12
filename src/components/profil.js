@@ -16,7 +16,11 @@ export default function Profil({ currentUser, onUpdateUser, onLogout }) {
     Email: '',
   });
 
+  const [oldPassword, setOldPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showOldPassword, setShowOldPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState('');
@@ -39,6 +43,8 @@ export default function Profil({ currentUser, onUpdateUser, onLogout }) {
         ...data,
         Password: '',
       });
+      setOldPassword('');
+      setConfirmPassword('');
       setInitialData(data);
     }
   }, [currentUser]);
@@ -109,6 +115,38 @@ export default function Profil({ currentUser, onUpdateUser, onLogout }) {
       return;
     }
 
+    // Validasi Password Lama, Password Baru & Konfirmasi Password
+    const hasOld = Boolean(oldPassword && oldPassword.trim().length > 0);
+    const hasPassword = Boolean(profile.Password && profile.Password.trim().length > 0);
+    const hasConfirm = Boolean(confirmPassword && confirmPassword.trim().length > 0);
+
+    if (hasOld || hasPassword || hasConfirm) {
+      if (!hasOld) {
+        setError('Password lama wajib diisi untuk mengubah kata sandi.');
+        return;
+      }
+      if (!hasPassword) {
+        setError('Password baru wajib diisi jika Anda ingin mengubah kata sandi.');
+        return;
+      }
+      if (!hasConfirm) {
+        setError('Konfirmasi password baru wajib diisi.');
+        return;
+      }
+      if (profile.Password !== confirmPassword) {
+        setError('Konfirmasi password tidak cocok dengan password baru.');
+        return;
+      }
+      if (profile.Password.length < 8) {
+        setError('Password baru harus memiliki minimal 8 karakter.');
+        return;
+      }
+      if (oldPassword === profile.Password) {
+        setError('Password baru tidak boleh sama dengan password lama.');
+        return;
+      }
+    }
+
     const detectedChanges = getChangedAttributes();
 
     if (detectedChanges.length === 0) {
@@ -137,6 +175,9 @@ export default function Profil({ currentUser, onUpdateUser, onLogout }) {
 
       if (profile.Password && profile.Password.trim().length > 0) {
         payload.Password = profile.Password.trim();
+        if (oldPassword && oldPassword.trim().length > 0) {
+          payload.OldPassword = oldPassword.trim();
+        }
       }
 
       const res = await fetch(`/api/users/${currentUser.IdUser}`, {
@@ -171,6 +212,8 @@ export default function Profil({ currentUser, onUpdateUser, onLogout }) {
         ...prev,
         Password: '',
       }));
+      setOldPassword('');
+      setConfirmPassword('');
 
       if (onUpdateUser) {
         onUpdateUser(updatedUser);
@@ -359,50 +402,173 @@ export default function Profil({ currentUser, onUpdateUser, onLogout }) {
                 />
               </div>
 
-              {/* Password */}
-              <div className="form-group">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <label htmlFor="input-profil-password" className="form-label" style={{ marginBottom: 0 }}>
-                    Password Baru
-                  </label>
+              {/* Bagian Ubah Password */}
+              <div
+                style={{
+                  marginTop: 24,
+                  padding: '20px',
+                  background: 'var(--bg-primary)',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 6 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>🔒</span>
+                    <span>Ubah Kata Sandi (Password)</span>
+                  </div>
                   <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                     (Kosongkan jika tidak ingin mengubah password)
                   </span>
                 </div>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    id="input-profil-password"
-                    type={showPassword ? 'text' : 'password'}
-                    className="form-control"
-                    value={profile.Password}
-                    onChange={handleChange('Password')}
-                    placeholder="Masukkan password baru..."
-                    style={{ paddingRight: 42 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: 12,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--text-muted)',
-                      cursor: 'pointer',
-                      fontSize: 16,
-                      padding: 2,
-                    }}
-                    title={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-                  >
-                    {showPassword ? '🙈' : '👁️'}
-                  </button>
+
+                {/* Password Lama */}
+                <div className="form-group" style={{ marginBottom: 14 }}>
+                  <label htmlFor="input-profil-old-password" className="form-label">
+                    Password Lama (Saat Ini)
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      id="input-profil-old-password"
+                      type={showOldPassword ? 'text' : 'password'}
+                      className="form-control"
+                      value={oldPassword}
+                      onChange={(e) => {
+                        setOldPassword(e.target.value);
+                        setError('');
+                        setSuccess('');
+                      }}
+                      placeholder="Masukkan password saat ini untuk verifikasi..."
+                      style={{ paddingRight: 42 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowOldPassword(!showOldPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: 12,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        fontSize: 16,
+                        padding: 2,
+                      }}
+                      title={showOldPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                    >
+                      {showOldPassword ? '🙈' : '👁️'}
+                    </button>
+                  </div>
                 </div>
+
+                <div className="form-grid-2">
+                  {/* Password Baru */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="input-profil-password" className="form-label">
+                      Password Baru
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        id="input-profil-password"
+                        type={showPassword ? 'text' : 'password'}
+                        className="form-control"
+                        value={profile.Password}
+                        onChange={handleChange('Password')}
+                        placeholder="Minimal 8 karakter..."
+                        style={{ paddingRight: 42 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: 12,
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          fontSize: 16,
+                          padding: 2,
+                        }}
+                        title={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                      >
+                        {showPassword ? '🙈' : '👁️'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Konfirmasi Password Baru */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="input-profil-confirm-password" className="form-label">
+                      Konfirmasi Password Baru
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        id="input-profil-confirm-password"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        className="form-control"
+                        value={confirmPassword}
+                        onChange={(e) => {
+                          setConfirmPassword(e.target.value);
+                          setError('');
+                          setSuccess('');
+                        }}
+                        placeholder="Ketik ulang password baru..."
+                        style={{ paddingRight: 42 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: 12,
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          fontSize: 16,
+                          padding: 2,
+                        }}
+                        title={showConfirmPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                      >
+                        {showConfirmPassword ? '🙈' : '👁️'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Password Feedback Info */}
+                {profile.Password && (
+                  <div style={{ marginTop: 10, fontSize: 12 }}>
+                    {profile.Password.length < 8 && (
+                      <div style={{ color: 'var(--warning)', marginBottom: 4 }}>
+                        ⚠️ Password sebaiknya minimal 8 karakter.
+                      </div>
+                    )}
+                    {confirmPassword && (
+                      profile.Password === confirmPassword ? (
+                        <div style={{ color: 'var(--success)', fontWeight: 600 }}>
+                          ✓ Konfirmasi password cocok.
+                        </div>
+                      ) : (
+                        <div style={{ color: 'var(--danger)', fontWeight: 600 }}>
+                          ✕ Konfirmasi password belum cocok.
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons: Delete Account di Kiri, Save di Kanan */}
               <div
+                className="profil-actions-container"
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
