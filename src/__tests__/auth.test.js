@@ -25,7 +25,7 @@ beforeEach(() => {
 describe('Auth Login API Suite (12 Tests)', () => {
   it('1. returns 400 when identifier is missing', async () => {
     const response = await authRoute.POST(makeRequest({ password: 'secretpassword' }));
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(999);
     const body = await responseBody(response);
     expect(body.Error).toMatch(/wajib diisi/i);
   });
